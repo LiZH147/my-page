@@ -1,9 +1,14 @@
 document.addEventListener("DOMContentLoaded", () => {
-    var canvas = document.getElementById("signature-pad");
-    var ctx = canvas.getContext("2d");
+    const canvas = document.getElementById("signature-pad");
+    const ctx = canvas.getContext("2d");
     var isDrawing = false;
     var lastX = 0, lastY = 0;
     var strokeStyle = "pen";
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+        const saveButton = document.getElementById("save");
+        saveButton.style.display = "none";
+    }
 
     // 创建开始绘制的函数
     function startDrawing(e) {
@@ -76,9 +81,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // 保存签名
     document.getElementById("save").addEventListener("click", async () => {
         const image = canvas.toDataURL("image/png");
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         if (isMobile) {
-            window.open(image, "_blank");
+            // window.open(image, "_blank");
         } else {
             try {
                 const blob = await (await fetch(image)).blob();
