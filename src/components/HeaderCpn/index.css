@@ -1,0 +1,20 @@
+.headerWrapper{
+    display: flex;
+    align-items: center;
+    height: 4em;
+    width: 100%;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 1px solid rgb(233, 233, 233);
+}
+.webAvatar{
+    flex-grow: 1;
+}
+.myLinks{
+    flex-grow: 2;
+}
+.leftBox{
+    float: right;
+    margin-right: 50px;
+    display: flex;
+}
