@@ -2,6 +2,6 @@ import React from 'react'
 
 export default function SiderCpn() {
   return (
-    <div>SiderCpn</div>
+    <div style={{flexGrow: 1}}>SiderCpn</div>
   )
 }

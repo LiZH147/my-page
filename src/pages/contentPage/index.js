@@ -7,7 +7,7 @@ const blockContent = `AntV 是蚂蚁集团全新一代数据可视化解决方�
 
 export default function MainPage() {
     return (
-        <Typography style={{ margin: '0 auto', width: '50%' }}>
+        <Typography style={{ margin: '0 auto', width: '80%' }}>
             <Title>Introduction</Title>
 
             <Paragraph>
