@@ -89,9 +89,9 @@ const datas = [
 
 export default function MainCpn() {
   useEffect(() => {
-    // axios.get("/Obsidian-depository").then(res => {
-    //   console.log(res);
-    // }).catch(err => console.log(err))
+    axios.get("http://localhost:3001/api/get").then(res => {
+      console.log(res);
+    }).catch(err => console.log(err))
   })
   return (
     <>
