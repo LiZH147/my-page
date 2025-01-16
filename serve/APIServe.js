@@ -1,6 +1,11 @@
 const http = require('http');
 const axios = require('axios');
 const cheerio = require('cheerio');
+const cache = {
+    data: null,
+    timestamp: null,
+    expirationTime: 500 * 60 * 1000  // 缓存过期时间，这里设置为500分钟
+};
 require('dotenv').config();
 
 // const HOST = "https://xui.ai-wallpaper.cn/xui";
@@ -82,24 +87,24 @@ async function getArticle(dirName, articleName, res) {
 async function getAllArticle(res) {
     async function getDirectoryContent(path = '') {
         try {
-            const url = path ? 
+            const url = path ?
                 `https://gitee.com/lizihan147/Obsidian-depository/tree/main/${path}` :
                 'https://gitee.com/lizihan147/Obsidian-depository';
-                
+
             const response = await axios.get(url);
             const content = getDepOrDir(response, 1);
-            
+
             let result = {
                 articles: content["art"],
                 directories: {}
             };
-            
+
             // 递归获取每个子目录的内容
             for (let dir of content["dir"]) {
                 const dirPath = path ? `${path}/${dir}` : dir;
                 result.directories[dir] = await getDirectoryContent(dirPath);
             }
-            
+
             return result;
         } catch (error) {
             console.error(`获取路径 ${path} 内容失败:`, error.message);
@@ -108,11 +113,33 @@ async function getAllArticle(res) {
     }
 
     try {
+        // 检查缓存是否存在且未过期
+        const now = Date.now();
+        if (cache.data && cache.timestamp &&
+            (now - cache.timestamp < cache.expirationTime)) {
+            console.log('返回缓存数据');
+            res.writeHead(200);
+            res.end(JSON.stringify({
+                success: true,
+                data: cache.data,
+                fromCache: true
+            }));
+            return;
+        }
+
+        // 如果缓存不存在或已过期，重新获取数据
+        console.log('获取新数据');
         const result = await getDirectoryContent();
+
+        // 更新缓存
+        cache.data = result;
+        cache.timestamp = now;
+
         res.writeHead(200);
         res.end(JSON.stringify({
             success: true,
-            data: result
+            data: result,
+            fromCache: false
         }));
     } catch (error) {
         res.writeHead(500);
@@ -121,6 +148,17 @@ async function getAllArticle(res) {
             error: error.message
         }));
     }
+}
+
+// 添加一个清除缓存的接口
+async function clearArticleCache(res) {
+    cache.data = null;
+    cache.timestamp = null;
+    res.writeHead(200);
+    res.end(JSON.stringify({
+        success: true,
+        message: '缓存已清除'
+    }));
 }
 
 
@@ -191,6 +229,9 @@ const server = http.createServer(async (req, res) => {
                 break;
             case '/api/getAllArticle':
                 getAllArticle(res);
+                break;
+            case '/api/clearArticleCache':
+                await clearArticleCache(res);
                 break;
             default:
                 // 处理未知路径
