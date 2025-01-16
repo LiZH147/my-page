@@ -1,4 +1,6 @@
-import React from 'react'
+import React, { useEffect } from 'react'
+import { useParams } from 'react-router-dom';
+import axios from 'axios';
 import { Divider, Typography } from 'antd';
 
 const { Title, Paragraph, Text, Link } = Typography;
@@ -6,10 +8,18 @@ const blockContent = `AntV 是蚂蚁集团全新一代数据可视化解决方�
 我们正在基础图表，图分析，图编辑，地理空间可视化，智能可视化等各个可视化的领域耕耘，欢迎同路人一起前行。`;
 
 export default function MainPage() {
+    const { id } = useParams();
+    useEffect(() => {
+        axios.get(`https://zihan-page-api.vercel.app/api/getArticle?dirName=${id}&articleName=Arguments.md`).then(res => {
+            console.log(res.data.data);
+            
+          }).catch(err => console.log(err))
+    }, [])
+    console.log(id)
     return (
         <Typography style={{ margin: '0 auto', width: '80%' }}>
             <Title>Introduction</Title>
-
+            
             <Paragraph>
                 In the process of internal desktop applications development, many different design specs and
                 implementations would be involved, which might cause designers and developers difficulties and
