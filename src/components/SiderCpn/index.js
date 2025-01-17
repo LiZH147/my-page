@@ -20,7 +20,6 @@ export default function SiderCpn() {
       <ul>
         {
           datas.map(item => {
-            console.log(item)
             return <li>{item}</li>
           })
         }

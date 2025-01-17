@@ -96,6 +96,7 @@ export default function MainCpn() {
       res.data.data.articles.forEach((item, index) => {
         let tempObj = {
           id: index,
+          path: '/',
           name: item,
           date: '4个月前',
           outline: item
@@ -109,6 +110,7 @@ export default function MainCpn() {
         e.articles.forEach((item, index) => {
           let tempObj = {
             id: index,
+            path: key,
             name: item,
             date: '4个月前',
             outline: item
@@ -154,7 +156,7 @@ export default function MainCpn() {
         dataSource={datas}
         footer={null}
         renderItem={data => (
-          <Link to={`/detail/${data.name}`}>
+          <Link to={`/detail/${data.path}/${data.name}`}>
             <Card
               key={data.id}
               title={data.name}
