@@ -42,7 +42,7 @@ async function getDir(dirName, res) {
         // 发送GET请求到外部API
         const response = await axios.get(`https://gitee.com/lizihan147/Obsidian-depository/tree/main/${dirName}`);
 
-        let dirNames = getDepOrDir(response);
+        let dirNames = getDepOrDir(response, 0);
 
         res.writeHead(200);
         res.end(JSON.stringify({

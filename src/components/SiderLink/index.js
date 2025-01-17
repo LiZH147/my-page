@@ -1,11 +1,13 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 
 export default function SiderLink({ path }) {
 
     return (
         <div style={{width: 222, height: 35}}>
-            <Link to={`/${path}`}>{path}</Link>
+            <NavLink style={{ color: 'black', textDecoration: 'none' }} to={`/${path}`}>
+            {!path ? 'All' : path}
+            </NavLink>
         </div>
     )
 }

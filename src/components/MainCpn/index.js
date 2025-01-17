@@ -6,13 +6,17 @@ import { Link, useParams } from 'react-router-dom';
 export default function MainCpn() {
   const [datas, setDatas] = useState([]);
   const { dirName } = useParams();
+  const axiosUrl = dirName
+    ? `https://zihan-page-api.vercel.app/api/getDir?name=${dirName}`
+    : "https://zihan-page-api.vercel.app/api/getAllArticle"
 
-  console.log(dirName)
   useEffect(() => {
-    axios.get("https://zihan-page-api.vercel.app/api/getAllArticle").then(res => {
-      // console.log("allArticles:", res);
+    axios.get(axiosUrl).then(res => {
+      // !dirName ? console.log("allArticles:", res) : console.log("dirName:", res)
+
       let tempDatas = [];
-      res.data.data.articles.forEach((item, index) => {
+      let resDatas = dirName ? res.data.data : res.data.data.articles
+      resDatas.forEach((item, index) => {
         let tempObj = {
           id: index,
           path: '/',
@@ -58,7 +62,7 @@ export default function MainCpn() {
 
     //   setDatas(tempDatas)
     // }).catch(err => console.log(err))
-  }, [])
+  }, [axiosUrl, dirName])
   return (
     <>
       <List

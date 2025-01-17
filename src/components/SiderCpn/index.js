@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import axios from 'axios';
 import SiderLink from '../SiderLink';
-import { Link } from 'react-router-dom';
 
 export default function SiderCpn() {
   const [datas, setDatas] = useState([])
@@ -19,12 +18,16 @@ export default function SiderCpn() {
   }, [])
   return (
     <div style={{ flexGrow: 1 }}>
+      <h2>分类</h2>
       <ul>
+        <div>
+          <SiderLink path={''} />
+        </div>
         {
-          datas.map(item => {
+          datas.map((item, idx) => {
             return (
               <div>
-                <SiderLink path={item}></SiderLink>
+                <SiderLink key={idx} path={item} />
               </div>
             )
           })

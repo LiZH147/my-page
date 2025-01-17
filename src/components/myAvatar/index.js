@@ -23,7 +23,7 @@ export default function MyAvatar(props) {
             <Avatar size={32} src={props.avatarSrc} />
             {/* <span style={{marginLeft: '8px'}}>{props.title}</span> */}
             <Modal title={props.title} open={isModalOpen} footer={null} onCancel={handleCancel}>
-                <img style={{width: '100%'}} src={props.modalSrc} />
+                <img alt={props.title} style={{width: '100%'}} src={props.modalSrc} />
             </Modal>
         </div>
     )
