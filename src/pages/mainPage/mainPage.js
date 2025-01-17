@@ -14,6 +14,7 @@ export default function MainPage() {
         <div style={{ flexGrow: 3.5 }}>
           <Routes>
             <Route path='/' element={<MainCpn />} />
+            <Route path='/:dirName' element={<MainCpn />} />
             <Route path='/detail/:path/:name' element={<ContentPage />} />
           </Routes>
         </div>

@@ -19,7 +19,7 @@ export default function MyAvatar(props) {
     }
 
     return (
-        <div className='main' onClick={props.title === '即刻' ? goToLink : show2Code } >
+        <div className='main' onClick={props.title === '即刻' || 'GitHub' ? goToLink : show2Code } >
             <Avatar size={32} src={props.avatarSrc} />
             {/* <span style={{marginLeft: '8px'}}>{props.title}</span> */}
             <Modal title={props.title} open={isModalOpen} footer={null} onCancel={handleCancel}>

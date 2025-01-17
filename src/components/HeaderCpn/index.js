@@ -7,6 +7,7 @@ export default function HeaderCpn() {
   const JikeAvatar = require('../../asset/JikeAvatar.png');
   const WeixinAvatar = require('../../asset/WeixinAvatar.js').WeixinAvatar;
   const QQAvatar = require('../../asset/QQAvatar.png')
+  const GitHubAvatar = require('../../asset/github.com_.png')
 
   return (
     <div className='headerWrapper'>
@@ -19,6 +20,7 @@ export default function HeaderCpn() {
           <MyAvatar title={'即刻'} avatarSrc={JikeAvatar} link={'https://okjk.co/ac6lkY'} />
           <MyAvatar title={'微信'} avatarSrc={WeixinAvatar} modalSrc={require('../../asset/WeixinCode.jpg')} />
           <MyAvatar title={'QQ'} avatarSrc={QQAvatar} modalSrc={require('../../asset/QQCode.jpg')} />
+          <MyAvatar title = {'GitHub'} avatarSrc={GitHubAvatar} link={'https://github.com/LiZH147'} />
         </div>
       </div>
     </div>

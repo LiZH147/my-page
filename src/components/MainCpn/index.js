@@ -1,94 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import { Card, List } from "antd";
 import axios from 'axios';
-import { Link } from 'react-router-dom';
-
-// const datas = [
-//   {
-//     id: '0',
-//     name: 'article1',
-//     date: '4个月前',
-//     outline: 'GitHub仓库初始化 本地未git初始化文件夹提交到github仓库main分支'
-//   },
-//   {
-//     id: '1',
-//     name: 'article2',
-//     date: '4个月前',
-//     outline: 'GitHub仓库初始化 本地未git初始化文件夹提交到github仓库main分支'
-//   },
-//   {
-//     id: '2',
-//     name: 'article3',
-//     date: '4个月前',
-//     outline: 'GitHub仓库初始化 本地未git初始化文件夹提交到github仓库main分支'
-//   },
-//   {
-//     id: '3',
-//     name: 'article4',
-//     date: '4个月前',
-//     outline: 'GitHub仓库初始化 本地未git初始化文件夹提交到github仓库main分支'
-//   },
-//   {
-//     id: '4',
-//     name: 'article5',
-//     date: '4个月前',
-//     outline: 'GitHub仓库初始化 本地未git初始化文件夹提交到github仓库main分支'
-//   },
-//   {
-//     id: '5',
-//     name: 'article6',
-//     date: '4个月前',
-//     outline: 'GitHub仓库初始化 本地未git初始化文件夹提交到github仓库main分支'
-//   },
-//   {
-//     id: '6',
-//     name: 'article7',
-//     date: '4个月前',
-//     outline: 'GitHub仓库初始化 本地未git初始化文件夹提交到github仓库main分支'
-//   },
-//   {
-//     id: '7',
-//     name: 'article8',
-//     date: '4个月前',
-//     outline: 'GitHub仓库初始化 本地未git初始化文件夹提交到github仓库main分支'
-//   },
-//   {
-//     id: '8',
-//     name: 'article9',
-//     date: '4个月前',
-//     outline: 'GitHub仓库初始化 本地未git初始化文件夹提交到github仓库main分支'
-//   },
-//   {
-//     id: '9',
-//     name: 'article10',
-//     date: '4个月前',
-//     outline: 'GitHub仓库初始化 本地未git初始化文件夹提交到github仓库main分支'
-//   },
-//   {
-//     id: '10',
-//     name: 'article11',
-//     date: '4个月前',
-//     outline: 'GitHub仓库初始化 本地未git初始化文件夹提交到github仓库main分支'
-//   },
-//   {
-//     id: '11',
-//     name: 'article12',
-//     date: '4个月前',
-//     outline: 'GitHub仓库初始化 本地未git初始化文件夹提交到github仓库main分支'
-//   },
-//   {
-//     id: '12',
-//     name: 'article13',
-//     date: '4个月前',
-//     outline: 'GitHub仓库初始化 本地未git初始化文件夹提交到github仓库main分支'
-//   }
-// ]
-
-// axios.defaults.baseURL = "https://gitee.com/lizihan147/Obsidian-depository"
-// axios.defaults.timeout = 5000;
+import { Link, useParams } from 'react-router-dom';
 
 export default function MainCpn() {
-  const [datas, setDatas] = useState([])
+  const [datas, setDatas] = useState([]);
+  const { dirName } = useParams();
+
+  console.log(dirName)
   useEffect(() => {
     axios.get("https://zihan-page-api.vercel.app/api/getAllArticle").then(res => {
       // console.log("allArticles:", res);
@@ -122,8 +41,6 @@ export default function MainCpn() {
       // console.log("tempDatas:", tempDatas)
       setDatas(tempDatas)
     }).catch(err => console.log(err))
-
-    // console.log("setDatas", datas)
 
     // axios.get("https://zihan-page-api.vercel.app/api/getDep").then(res => {
     //   console.log(res);

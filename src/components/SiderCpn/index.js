@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react'
 import axios from 'axios';
+import SiderLink from '../SiderLink';
+import { Link } from 'react-router-dom';
 
 export default function SiderCpn() {
   const [datas, setDatas] = useState([])
 
   useEffect(() => {
     axios.get("https://zihan-page-api.vercel.app/api/getDep").then(res => {
-      console.log(res);
+      // console.log(res);
       let tempDatas = [];
       res.data.data.dir.forEach((item, index) => {
         tempDatas.push(item)
@@ -20,7 +22,11 @@ export default function SiderCpn() {
       <ul>
         {
           datas.map(item => {
-            return <li>{item}</li>
+            return (
+              <div>
+                <SiderLink path={item}></SiderLink>
+              </div>
+            )
           })
         }
       </ul>
