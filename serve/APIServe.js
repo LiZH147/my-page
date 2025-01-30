@@ -163,7 +163,6 @@ async function clearArticleCache(res) {
 
 
 const server = http.createServer(async (req, res) => {
-    // 设置响应头，支持跨域
     // 解析 URL
     const url = new URL(req.url, `http://${req.headers.host}`);
 
@@ -185,16 +184,7 @@ const server = http.createServer(async (req, res) => {
                     let dirNames = [], articleNames = [];
                     $('.tree-folder-item').each((index, element) => {
                         let eleText = $(element).text();
-                        // let dateDiv = $(element).parent().parent();
-                        // dateDiv.each((i, child) => {
-                        //     console.log(`子元素文本内容 (${i + 1}):`, $(child).text(), $(child).attr('class'));
-                        // })
-                        let tempObj = {
-                            id: index,
-                            name: eleText,
-                            date: '4个月前',
-                            outline: eleText
-                        }
+
                         if (!(eleText[0] === '.' || eleText === 'LICENSE')) {
                             eleText.includes('.') ? articleNames.push(eleText) : dirNames.push(eleText)
                         };

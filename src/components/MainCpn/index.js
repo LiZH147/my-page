@@ -65,6 +65,7 @@ export default function MainCpn() {
   }, [axiosUrl, dirName])
   return (
     <>
+    <img src={require('../../asset/headerIMG.png')} style={{width:'100%', marginBottom:'8px'}} alt='headerIMG' />
       <List
         itemLayout='vertical'
         pagination={{
