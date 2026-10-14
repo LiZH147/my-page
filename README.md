@@ -1,70 +1,83 @@
-# Getting Started with Create React App
+# 梓木辛 (Zihan Home)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+基于 Next.js 14 的个人知识库网站，内容来自 Gitee Obsidian 仓库，使用 ISR + SSG 渲染。
 
-## Available Scripts
+## 技术栈
 
-In the project directory, you can run:
+- **框架**: [Next.js 14](https://nextjs.org/) (App Router)
+- **样式**: [Tailwind CSS](https://tailwindcss.com/)
+- **Markdown**: markdown-it + highlight.js 代码高亮
+- **部署**: [Vercel](https://vercel.com)
 
-### `npm start`
+## 项目结构
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+```
+├── app/                    # Next.js App Router 页面
+│   ├── layout.js           # 全局布局（SEO metadata、Header、Footer）
+│   ├── page.js             # 首页（SSG）
+│   ├── not-found.js        # 404 页面
+│   ├── article/[...slug]/  # 文章详情（ISR，含结构化数据）
+│   ├── category/[catName]/ # 分类页面（SSG）
+│   └── sitemap.xml/        # 动态 Sitemap（SSG）
+├── lib/                    # 工具函数
+│   ├── gitee.js            # Gitee API 数据获取（含缓存）
+│   ├── markdown.js         # Markdown 渲染
+│   └── seo.js              # SEO 元数据生成
+├── src/
+│   └── globals.css         # Tailwind + Markdown 样式
+├── public/                 # 静态资源
+└── vercel.json             # Vercel 部署配置
+```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## SEO 优化清单
 
-### `npm test`
+- ✅ **SSG / ISR**: 首页和分类页静态生成，文章页 ISR 缓存
+- ✅ **TDH**: Title + Description + H1 每页独立优化
+- ✅ **Open Graph**: 每页独立 OG 标签
+- ✅ **Twitter Card**: Summary card 支持
+- ✅ **Canonical URL**: 每页规范链接
+- ✅ **JSON-LD 结构化数据**: WebSite、Article、BreadcrumbList
+- ✅ **Sitemap.xml**: 自动生成，包含所有页面
+- ✅ **robots.txt**: 配置爬虫规则和 Sitemap 位置
+- ✅ **语义化 HTML**: 使用 `<article>`, `<nav>`, `<header>`, `<footer>`
+- ✅ **面包屑导航**: 含 Schema 标记
+- ✅ **响应式设计**: Tailwind 移动端优先
+- ✅ **语义化 URL**: `/article/category/name` 而非 hash 路由
+- ✅ **代码高亮**: highlight.js 服务端渲染
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## 本地开发
 
-### `npm run build`
+```bash
+# 安装依赖
+pnpm install
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+# 启动开发服务器
+pnpm dev
+# 访问 http://localhost:3000
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+# 构建生产版本
+pnpm build
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+# 启动生产服务器
+pnpm start
+```
 
-### `npm run eject`
+## Vercel 部署
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+项目已配置 `vercel.json`，部署到 Vercel 后自动：
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+1. 使用 `hkg1` (香港) 区域，优化国内访问
+2. ISR 缓存页面自动刷新
+3. Sitemap 自动更新
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+```bash
+vercel --prod
+```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## 数据源
 
-## Learn More
+文章和分类数据来自 Gitee 仓库 `lizihan147/Obsidian-depository`，通过 cheerio 解析 HTML 页面获取。构建时 / 首次请求时获取并缓存。
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## License
 
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+MIT

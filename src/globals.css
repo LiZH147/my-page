@@ -1,0 +1,97 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-white text-gray-900 antialiased;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  }
+}
+
+@layer components {
+  .markdown-content {
+    @apply leading-relaxed;
+  }
+  .markdown-content h1 {
+    @apply text-3xl font-bold mt-8 mb-4 pb-2 border-b border-gray-200;
+  }
+  .markdown-content h2 {
+    @apply text-2xl font-semibold mt-6 mb-3;
+  }
+  .markdown-content h3 {
+    @apply text-xl font-semibold mt-5 mb-2;
+  }
+  .markdown-content h4 {
+    @apply text-lg font-medium mt-4 mb-2;
+  }
+  .markdown-content p {
+    @apply my-3 leading-7;
+  }
+  .markdown-content ul, .markdown-content ol {
+    @apply pl-6 my-3;
+  }
+  .markdown-content li {
+    @apply my-1.5;
+  }
+  .markdown-content blockquote {
+    @apply border-l-4 border-blue-400 pl-4 my-4 italic text-gray-600 bg-blue-50 py-3 pr-4 rounded-r;
+  }
+  .markdown-content img {
+    @apply max-w-full h-auto my-4 rounded-lg shadow-md;
+  }
+  .markdown-content pre {
+    @apply bg-gray-900 text-gray-100 rounded-lg p-4 my-4 overflow-x-auto text-sm;
+  }
+  .markdown-content code {
+    @apply font-mono text-sm;
+  }
+  .markdown-content p code {
+    @apply bg-gray-100 text-pink-600 px-1.5 py-0.5 rounded;
+  }
+  .markdown-content a {
+    @apply text-blue-600 hover:text-blue-800 underline decoration-blue-300 hover:decoration-blue-600 transition;
+  }
+  .markdown-content table {
+    @apply w-full border-collapse my-4;
+  }
+  .markdown-content th {
+    @apply bg-gray-100 font-semibold px-4 py-2 border border-gray-300 text-left;
+  }
+  .markdown-content td {
+    @apply px-4 py-2 border border-gray-300;
+  }
+  .markdown-content .table-of-contents {
+    @apply bg-gray-50 rounded-lg p-4 my-6 border border-gray-200;
+  }
+  .markdown-content .toc-list {
+    @apply list-none pl-0;
+  }
+  .markdown-content .toc-item {
+    @apply my-1;
+  }
+  .markdown-content .toc-link {
+    @apply text-gray-700 no-underline hover:text-blue-600;
+  }
+
+  /* Navigation styles */
+  .sider-link {
+    @apply block px-4 py-2 text-gray-700 rounded-lg transition-colors
+           hover:bg-blue-50 hover:text-blue-600;
+  }
+  .sider-link.active {
+    @apply bg-blue-100 text-blue-700 font-medium;
+  }
+
+  .article-card {
+    @apply block p-6 bg-white rounded-xl border border-gray-200
+           hover:border-blue-300 hover:shadow-md transition-all duration-200;
+  }
+  .article-card h3 {
+    @apply text-lg font-semibold text-gray-900 mb-2;
+  }
+  .article-card p {
+    @apply text-sm text-gray-500;
+  }
+}
