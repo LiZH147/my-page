@@ -30,7 +30,7 @@
   "crons": [
     {
       "path": "/api/tree",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
