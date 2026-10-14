@@ -46,22 +46,27 @@ export default async function HomePage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Hero */}
-      <section className="mb-12 text-center">
-        <Image
-          src="/logo512.png"
-          alt="Zihan Home"
-          width={80}
-          height={80}
-          className="mx-auto mb-4 rounded-2xl shadow-lg"
-          priority
-        />
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
-          梓木辛的知识库
-        </h1>
-        <p className="text-lg text-gray-500 max-w-2xl mx-auto">
-          分享技术文章、学习笔记与知识沉淀。涵盖编程、算法、系统设计等领域。
-        </p>
+      {/* Hero Banner */}
+      <section className="relative mb-12 -mx-4 sm:-mx-6 lg:-mx-8 overflow-hidden rounded-none sm:rounded-xl">
+        <div className="relative h-48 sm:h-64 lg:h-72">
+          <Image
+            src="/headerIMG.png"
+            alt="Zihan Home Banner"
+            fill
+            className="object-cover"
+            priority
+            sizes="100vw"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8 text-white">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 drop-shadow-lg">
+              梓木辛的知识库
+            </h1>
+            <p className="text-sm sm:text-base text-white/80 max-w-2xl drop-shadow">
+              分享技术文章、学习笔记与知识沉淀。涵盖编程、算法、系统设计等领域。
+            </p>
+          </div>
+        </div>
       </section>
 
       {/* Stats */}

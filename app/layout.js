@@ -15,7 +15,7 @@ export const metadata = {
   creator: SITE_CONFIG.author,
   publisher: SITE_CONFIG.author,
   formatDetection: { email: false, address: false, telephone: false },
-  icons: { icon: '/favicon.jpg', apple: '/logo192.png' },
+  icons: { icon: '/logo192.png', apple: '/logo192.png' },
   manifest: '/manifest.json',
   openGraph: {
     type: 'website',
@@ -71,7 +71,7 @@ function SiteHeader() {
             prefetch={true}
           >
             <Image
-              src="/favicon.jpg"
+              src="/logo192.png"
               alt="Zihan Home Logo"
               width={32}
               height={32}
