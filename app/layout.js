@@ -6,11 +6,13 @@ import { SITE_CONFIG, generateSiteSchema } from '@/lib/seo';
 export const metadata = {
   metadataBase: new URL(SITE_CONFIG.url),
   title: {
-    default: `${SITE_CONFIG.title} | ${SITE_CONFIG.description}`,
-    template: `%s - ${SITE_CONFIG.name}`,
+    default: `${SITE_CONFIG.title} | ${SITE_CONFIG.shortName}`,
+    // Pages build their full title via generatePageMetadata(), which already
+    // appends the site name. A `%s - <site>` template here doubled it.
+    template: '%s',
   },
   description: SITE_CONFIG.description,
-  keywords: ['技术博客', '知识库', '编程', '算法', '学习笔记', '个人网站', 'Zihan'],
+  keywords: SITE_CONFIG.keywords,
   authors: [{ name: SITE_CONFIG.author }],
   creator: SITE_CONFIG.author,
   publisher: SITE_CONFIG.author,
@@ -24,13 +26,20 @@ export const metadata = {
     siteName: SITE_CONFIG.name,
     title: SITE_CONFIG.title,
     description: SITE_CONFIG.description,
-    images: [{ url: '/logo512.png', width: 512, height: 512, alt: SITE_CONFIG.name }],
+    images: [
+      {
+        url: SITE_CONFIG.ogImage,
+        width: SITE_CONFIG.ogImageWidth,
+        height: SITE_CONFIG.ogImageHeight,
+        alt: SITE_CONFIG.name,
+      },
+    ],
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
     title: SITE_CONFIG.title,
     description: SITE_CONFIG.description,
-    images: ['/logo512.png'],
+    images: [SITE_CONFIG.ogImage],
   },
   robots: {
     index: true,
@@ -45,6 +54,10 @@ export default function RootLayout({ children }) {
   return (
     <html lang="zh-CN">
       <head>
+        {/* Article images are served from the repo host — warm the connection
+            before the parser reaches the first <img>. */}
+        <link rel="preconnect" href="https://gitee.com" />
+        <link rel="dns-prefetch" href="https://raw.githubusercontent.com" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(siteSchema) }}

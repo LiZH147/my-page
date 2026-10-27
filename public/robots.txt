@@ -1,12 +1,12 @@
 User-agent: *
 Allow: /
 
-# Sitemap location
+# Internal JSON endpoints return no indexable content.
+Disallow: /api/
+
+# NOTE: /_next/ must stay crawlable. Blocking it prevents Googlebot from
+# fetching the CSS/JS it needs to render pages, which tanks mobile-friendly
+# and Core Web Vitals evaluation. Crawl-delay is likewise removed: Google
+# ignores it, and stricter bots would only crawl us more slowly.
+
 Sitemap: https://zihan-home.vercel.app/sitemap.xml
-
-# Crawl-delay for polite crawling
-Crawl-delay: 10
-
-# Disallow sensitive paths
-Disallow: /api/*
-Disallow: /_next/*

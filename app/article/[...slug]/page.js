@@ -1,60 +1,131 @@
 import Link from 'next/link';
-import { getArticleContent } from '@/lib/gitee';
-import { renderMarkdown, extractPlainText } from '@/lib/markdown';
-import { generatePageMetadata, generateArticleSchema, generateBreadcrumbSchema } from '@/lib/seo';
+import {
+  getArticleContent,
+  getDirectoryTree,
+  getRawBaseForDir,
+} from '@/lib/gitee';
+import {
+  renderMarkdown,
+  extractPlainText,
+  prepareArticle,
+  countWords,
+} from '@/lib/markdown';
+import {
+  generatePageMetadata,
+  generateArticleSchema,
+  generateBreadcrumbSchema,
+  SITE_CONFIG,
+} from '@/lib/seo';
+import {
+  articlePath,
+  categoryPath,
+  categoryTitle,
+  cleanTitle,
+  parseArticleSlug,
+  splitSegments,
+  articleSegments,
+  resolveRelativeArticleLink,
+} from '@/lib/urls';
 import { notFound } from 'next/navigation';
 
 export const revalidate = 3600;
 
-async function fetchArticle(dirName, artName) {
-  const rawContent = await getArticleContent(dirName, artName);
-  if (!rawContent) return null;
+/**
+ * Rewrite relative `.md` links inside a note so they point at real routes
+ * instead of resolving against the page URL (which 404s).
+ */
+function makeLinkResolver(dirPath) {
+  return (href) => resolveRelativeArticleLink(dirPath, href) ?? href;
+}
 
-  const htmlContent = renderMarkdown(rawContent);
-  const plainText = extractPlainText(htmlContent, 300);
+async function loadArticle(dirPath, artName) {
+  const raw = await getArticleContent(dirPath, artName);
+  if (!raw) return null;
 
-  return { htmlContent, plainText };
+  const rawBase = await getRawBaseForDir(dirPath);
+  const prepared = prepareArticle(raw);
+  const htmlContent = renderMarkdown(prepared.markdown, {
+    rawBase,
+    resolveLink: makeLinkResolver(dirPath),
+  });
+  const plainText = extractPlainText(htmlContent, 400);
+
+  const title = prepared.title || cleanTitle(artName);
+  const description = plainText.slice(0, 200);
+
+  return { htmlContent, plainText, title, description };
+}
+
+export async function generateStaticParams() {
+  try {
+    const tree = await getDirectoryTree();
+    const params = [];
+    for (const fileName of tree.articles) {
+      params.push({ slug: articleSegments('', fileName) });
+    }
+    for (const [dirPath, data] of Object.entries(tree.directories)) {
+      for (const fileName of data.articles) {
+        params.push({ slug: articleSegments(dirPath, fileName) });
+      }
+    }
+    return params;
+  } catch {
+    return [];
+  }
 }
 
 export async function generateMetadata({ params }) {
-  const slug = params.slug || [];
-  const dirName = slug.length > 1 ? slug[0] : '';
-  const artName = slug.length > 1 ? slug[1] : slug[0];
-
+  const { dirPath, artName } = parseArticleSlug(params.slug);
   if (!artName) return generatePageMetadata({ title: '文章未找到', path: '' });
 
-  const article = await fetchArticle(dirName, artName);
+  const article = await loadArticle(dirPath, artName);
   if (!article) return generatePageMetadata({ title: '文章未找到', path: '' });
 
-  const title = decodeURIComponent(artName).replace(/-/g, ' ');
-  const path = `/article/${slug.map(s => encodeURIComponent(s)).join('/')}`;
+  const path = articlePath(dirPath, artName);
+  const section = dirPath ? categoryTitle(dirPath) : null;
 
-  return generatePageMetadata({ title, description: article.plainText, path, type: 'article' });
+  return generatePageMetadata({
+    title: article.title,
+    description: article.description,
+    path,
+    type: 'article',
+    section,
+    keywords: section
+      ? [section, article.title, ...SITE_CONFIG.keywords.slice(0, 4)]
+      : [article.title, ...SITE_CONFIG.keywords.slice(0, 4)],
+  });
 }
 
 export default async function ArticlePage({ params }) {
-  const slug = params.slug || [];
-  const dirName = slug.length > 1 ? slug[0] : '';
-  const artName = slug.length > 1 ? slug[1] : slug[0];
-
+  const { dirPath, artName, segments } = parseArticleSlug(params.slug);
   if (!artName) notFound();
 
-  const article = await fetchArticle(dirName, artName);
+  const article = await loadArticle(dirPath, artName);
   if (!article) notFound();
 
-  const title = decodeURIComponent(artName).replace(/-/g, ' ');
-  const path = `/article/${slug.map(s => encodeURIComponent(s)).join('/')}`;
+  const path = articlePath(dirPath, artName);
+  const section = dirPath ? categoryTitle(dirPath) : null;
 
-  const articleSchema = generateArticleSchema({ title, description: article.plainText, path });
+  const articleSchema = generateArticleSchema({
+    title: article.title,
+    description: article.description,
+    path,
+    section,
+    keywords: section ? [section, article.title] : [article.title],
+    wordCount: countWords(article.plainText),
+  });
 
+  // Breadcrumb: 首页 / …每一层分类 / 文章
   const breadcrumbItems = [{ name: '首页', url: '/' }];
-  if (dirName) {
+  const dirSegments = splitSegments(dirPath);
+  for (let i = 0; i < dirSegments.length; i += 1) {
+    const partial = dirSegments.slice(0, i + 1).join('/');
     breadcrumbItems.push({
-      name: decodeURIComponent(dirName),
-      url: `/category/${encodeURIComponent(dirName)}`,
+      name: dirSegments[i],
+      url: categoryPath(partial),
     });
   }
-  breadcrumbItems.push({ name: title, url: path });
+  breadcrumbItems.push({ name: article.title, url: path });
 
   const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
 
@@ -66,8 +137,12 @@ export default async function ArticlePage({ params }) {
           {breadcrumbItems.map((item, idx) => (
             <li key={idx} className="flex items-center gap-2">
               {idx > 0 && <span aria-hidden="true">/</span>}
-              {item.url ? (
-                <Link href={item.url} className="hover:text-blue-600 transition-colors" prefetch={false}>
+              {idx < breadcrumbItems.length - 1 && item.url ? (
+                <Link
+                  href={item.url}
+                  className="hover:text-blue-600 transition-colors"
+                  prefetch={false}
+                >
                   {item.name}
                 </Link>
               ) : (
@@ -83,16 +158,38 @@ export default async function ArticlePage({ params }) {
       {/* Article */}
       <article>
         <header className="mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">{title}</h1>
-          {article.plainText && (
-            <p className="text-gray-500">{article.plainText.slice(0, 160)}</p>
-          )}
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+            {article.title}
+          </h1>
+          <p className="text-gray-500">
+            {section ? `${section} · ` : ''}
+            {countWords(article.plainText)} 字
+          </p>
         </header>
 
         <div
           className="markdown-content"
           dangerouslySetInnerHTML={{ __html: article.htmlContent }}
         />
+
+        {/* Prev/next within the same category keeps crawl depth low */}
+        {segments.length > 0 && (
+          <nav className="mt-12 pt-6 border-t border-gray-200" aria-label="分类导航">
+            {dirPath ? (
+              <Link
+                href={categoryPath(dirPath)}
+                className="text-blue-600 hover:text-blue-800 text-sm"
+                prefetch={false}
+              >
+                ← 返回 {categoryTitle(dirPath)}
+              </Link>
+            ) : (
+              <Link href="/" className="text-blue-600 hover:text-blue-800 text-sm">
+                ← 返回首页
+              </Link>
+            )}
+          </nav>
+        )}
       </article>
 
       {/* Structured data */}

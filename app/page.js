@@ -1,30 +1,34 @@
 import Link from 'next/link';
 import { getDirectoryTree } from '@/lib/gitee';
-import { generatePageMetadata } from '@/lib/seo';
+import {
+  generatePageMetadata,
+  generateItemListSchema,
+  generatePersonSchema,
+  SITE_CONFIG,
+} from '@/lib/seo';
+import {
+  articlePath,
+  categoryPath,
+  categoryTitle,
+  cleanTitle,
+} from '@/lib/urls';
 
 export const metadata = generatePageMetadata({
-  title: '首页',
-  description: '梓木辛的个人知识库，分享技术文章、学习笔记与知识沉淀。涵盖编程、算法、系统设计等领域。',
+  description: SITE_CONFIG.description,
+  path: '/',
 });
 
 export const revalidate = 3600;
 
-function extractTitle(name) {
-  return name.replace(/\.(md|html|txt)$/, '').replace(/[-_]/g, ' ').trim();
-}
-
-function ArticleCard({ article, dirName }) {
-  const title = extractTitle(article);
-  const slug = article.replace(/\.(md|html)$/, '');
-  const href = dirName
-    ? `/article/${encodeURIComponent(dirName)}/${encodeURIComponent(slug)}`
-    : `/article/${encodeURIComponent(slug)}`;
+function ArticleCard({ fileName, dirPath }) {
+  const href = articlePath(dirPath, fileName);
 
   return (
     <Link href={href} className="article-card group" prefetch={false}>
-      <h3 className="group-hover:text-blue-600 transition-colors">{title}</h3>
+      <h3 className="group-hover:text-blue-600 transition-colors">{cleanTitle(fileName)}</h3>
       <p className="text-sm text-gray-400 mt-1">
-        {dirName ? `${dirName} / ` : ''}{article}
+        {dirPath ? `${categoryTitle(dirPath)} / ` : ''}
+        {fileName}
       </p>
     </Link>
   );
@@ -33,15 +37,27 @@ function ArticleCard({ article, dirName }) {
 export default async function HomePage() {
   const tree = await getDirectoryTree();
 
-  const rootArticles = (tree.articles || []).map((a) => ({ article: a, dir: null }));
-  const categorized = [];
-  for (const [dirName, dirData] of Object.entries(tree.directories || {})) {
-    if (dirData.articles) {
-      dirData.articles.forEach((article) => categorized.push({ article, dir: dirName }));
-    }
-  }
-  const allArticles = [...categorized, ...rootArticles];
-  const dirCount = Object.keys(tree.directories || {}).length;
+  const categories = Object.entries(tree.directories || {}).map(([dirPath, dirData]) => ({
+    dirPath,
+    label: categoryTitle(dirPath),
+    articles: dirData.articles || [],
+    path: categoryPath(dirPath),
+  }));
+
+  const rootArticles = tree.articles || [];
+  const articleCount =
+    rootArticles.length +
+    categories.reduce((sum, category) => sum + category.articles.length, 0);
+
+  const categoryListSchema = generateItemListSchema({
+    name: '知识库分类目录',
+    path: '/',
+    items: categories.map((category) => ({
+      name: category.label,
+      path: category.path,
+    })),
+  });
+  const personSchema = generatePersonSchema();
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -60,7 +76,7 @@ export default async function HomePage() {
             梓木辛的知识库
           </h1>
           <p className="text-sm sm:text-base text-blue-200/80 max-w-2xl mx-auto leading-relaxed">
-            分享技术文章、学习笔记与知识沉淀。涵盖编程、算法、系统设计等领域。
+            分享技术文章、学习笔记与知识沉淀。涵盖前端工程、系统与网络、科研实践等领域。
           </p>
         </div>
       </section>
@@ -68,49 +84,53 @@ export default async function HomePage() {
       {/* Stats */}
       <div className="flex items-center justify-center gap-8 mb-10 text-sm text-gray-500">
         <div className="text-center">
-          <span className="block text-2xl font-bold text-gray-900">{allArticles.length}</span>
+          <span className="block text-2xl font-bold text-gray-900">{articleCount}</span>
           <span>篇文章</span>
         </div>
         <div className="text-center">
-          <span className="block text-2xl font-bold text-gray-900">{dirCount}</span>
+          <span className="block text-2xl font-bold text-gray-900">{categories.length}</span>
           <span>个分类</span>
         </div>
       </div>
 
       {/* Categories */}
-      {dirCount > 0 && (
+      {categories.length > 0 && (
         <section className="mb-10">
           <h2 className="text-xl font-bold text-gray-900 mb-6 pb-2 border-b border-gray-200">
             分类目录
           </h2>
           <div className="space-y-8">
-            {Object.entries(tree.directories).map(([dirName, dirData]) => (
-              <div key={dirName}>
+            {categories.map((category) => (
+              <div key={category.dirPath}>
                 <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
                   <span className="w-2 h-2 bg-blue-500 rounded-full inline-block" />
                   <Link
-                    href={`/category/${encodeURIComponent(dirName)}`}
+                    href={category.path}
                     className="hover:text-blue-600 transition-colors"
                     prefetch={false}
                   >
-                    {dirName}
+                    {category.label}
                   </Link>
                   <span className="text-sm font-normal text-gray-400">
-                    ({dirData.articles?.length || 0} 篇)
+                    ({category.articles.length} 篇)
                   </span>
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {(dirData.articles || []).slice(0, 6).map((article) => (
-                    <ArticleCard key={article} article={article} dirName={dirName} />
+                  {category.articles.slice(0, 6).map((fileName) => (
+                    <ArticleCard
+                      key={`${category.dirPath}/${fileName}`}
+                      fileName={fileName}
+                      dirPath={category.dirPath}
+                    />
                   ))}
                 </div>
-                {(dirData.articles || []).length > 6 && (
+                {category.articles.length > 6 && (
                   <Link
-                    href={`/category/${encodeURIComponent(dirName)}`}
+                    href={category.path}
                     className="inline-block mt-3 text-sm text-blue-600 hover:text-blue-800"
                     prefetch={false}
                   >
-                    查看全部 {(dirData.articles || []).length} 篇 →
+                    查看全部 {category.articles.length} 篇 →
                   </Link>
                 )}
               </div>
@@ -126,19 +146,28 @@ export default async function HomePage() {
             未分类文章
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {rootArticles.map(({ article }) => (
-              <ArticleCard key={article} article={article} />
+            {rootArticles.map((fileName) => (
+              <ArticleCard key={fileName} fileName={fileName} dirPath="" />
             ))}
           </div>
         </section>
       )}
 
-      {allArticles.length === 0 && (
+      {articleCount === 0 && (
         <div className="text-center py-16 text-gray-400">
           <p className="text-lg">暂无内容</p>
-          <p className="text-sm mt-2">文章数据将在构建时从 GitHub 加载</p>
+          <p className="text-sm mt-2">内容正在同步，请稍后刷新</p>
         </div>
       )}
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(categoryListSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(personSchema) }}
+      />
     </div>
   );
 }
