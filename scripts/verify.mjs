@@ -46,7 +46,7 @@ import {
   resolveRelativeArticleLink,
 } from '../lib/urls.js';
 import { isExcluded } from '../lib/excluded.js';
-import { readdirSync, readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -317,6 +317,13 @@ ok(
   ok('源码与静态资源无死域名残留', offenders.length === 0, offenders.join(', ') || '0 处');
 }
 
+// Sharing metadata is worthless if the file it points at is missing.
+ok(
+  'OG 图片文件存在',
+  existsSync(join(ROOT, 'public', SITE_CONFIG.ogImage)),
+  SITE_CONFIG.ogImage
+);
+
 // ── 5. Route graph — the check that catches dead links ─
 section('5. 路由图一致性 — 每个链接都必须是真实路由');
 
@@ -444,7 +451,7 @@ if (!baseUrl) {
     ['/about', 'about'],
     ['/sitemap.xml', 'sitemap'],
     ['/robots.txt', 'robots'],
-    ['/og-image.png', 'og image'],
+    [SITE_CONFIG.ogImage, 'og image'],
     ['/hero-banner.png', 'hero banner'],
     ...dirKeys.slice(0, 6).map((k) => [categoryPath(k), `category ${k}`]),
     ...sample.slice(0, 6).map(({ dirPath, fileName }) => [

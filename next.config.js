@@ -37,6 +37,11 @@ const nextConfig = {
         ],
       },
       {
+        // NOTE: anything served from public/ under a stable name is cached for a
+        // day and may be served stale for a week, and social scrapers cache
+        // images by URL for far longer. Changing the bytes without changing the
+        // filename never reaches readers, so bump the filename instead
+        // (e.g. og-image-v2.png) — see SITE_CONFIG.ogImage.
         source: '/:file.(jpg|jpeg|png|webp|avif|svg|ico)',
         headers: [
           {
