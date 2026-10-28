@@ -12,6 +12,7 @@ import {
   getDirectoryTree,
   getArticleContent,
   getRawBaseForDir,
+  getRepoRawBase,
 } from '../lib/gitee.js';
 import {
   renderMarkdown,
@@ -84,6 +85,9 @@ const tree = await getDirectoryTree();
 ok('返回对象', !!tree && typeof tree === 'object');
 ok('articles 是数组', Array.isArray(tree.articles));
 ok('directories 是对象', !!tree.directories && typeof tree.directories === 'object');
+ok('assets 是数组（图片索引）', Array.isArray(tree.assets));
+ok('assets 至少收录一张图片', (tree.assets || []).length > 0, `${(tree.assets || []).length} 个`);
+const repoRawBase = await getRepoRawBase();
 
 const dirKeys = Object.keys(tree.directories || {});
 const dirEntries = dirKeys.map((key) => ({
@@ -219,7 +223,67 @@ ok(
 ok('父级相对图片归一化', renderMarkdown('![x](../b.png)', { rawBase: 'https://r.test/d' }).includes('src="https://r.test/b.png"'), renderMarkdown('![x](../b.png)', { rawBase: 'https://r.test/d' }).match(/src="[^"]*"/)?.[0]);
 ok('图片懒加载', imgHtml.includes('loading="lazy"'));
 ok('图片 async 解码', imgHtml.includes('decoding="async"'));
+// Git hosts 403 a cross-origin hotlink (same URL is 200 with no Referer), so a
+// cross-origin <img> without this attribute is a guaranteed broken icon.
+ok('图片带 no-referrer（规避防盗链）', /referrerpolicy="no-referrer"/.test(imgHtml));
 ok('图片保留 alt', /alt="图"/.test(imgHtml));
+
+// Obsidian wiki embeds — invisible before, because markdown-it does not parse
+// `![[...]]` and rendered the brackets as text.
+const wikiCtx = {
+  dirPath: 'RDMA',
+  assets: ['RDMA/Pasted image 20241015143448.png', '快应用/image.png'],
+  repoRawBase: 'https://raw.test/raw/main',
+};
+const wikiHtml = renderMarkdown('![[Pasted image 20241015143448.png]]', wikiCtx);
+ok(
+  'Obsidian ![[...]] 同目录图片被解析',
+  wikiHtml.includes('src="https://raw.test/raw/main/RDMA/Pasted%20image%2020241015143448.png"'),
+  wikiHtml.match(/src="[^"]*"/)?.[0]
+);
+ok('wiki 嵌入不再显示原始方括号', !wikiHtml.includes('![['));
+const wikiRoot = renderMarkdown('![[快应用/image.png]]', wikiCtx);
+ok(
+  'wiki 仓库根相对路径被解析',
+  wikiRoot.includes('src="https://raw.test/raw/main/%E5%BF%AB%E5%BA%94%E7%94%A8/image.png"'),
+  wikiRoot.match(/src="[^"]*"/)?.[0]
+);
+const wikiMissing = renderMarkdown('![[不存在.png]]', wikiCtx);
+ok('无法定位的嵌入保持原样（不造 404）', wikiMissing.includes('![[不存在.png]]'));
+const wikiFence = renderMarkdown('```\n![[a.png]]\n```', { ...wikiCtx, assets: ['RDMA/a.png'] });
+ok('代码块内的嵌入不被改写', wikiFence.includes('![[a.png]]'));
+
+// markdown-it percent-encodes a destination before the renderer sees it, so a
+// CJK path arrives as `%e5%bf%ab…`. Matching the inventory against that string
+// silently fell through to the old resolver and produced a 404 URL.
+const vaultImg = renderMarkdown('![x](快应用/image.png)', wikiCtx);
+ok(
+  '普通语法里的仓库根相对图片也能定位',
+  vaultImg.includes('/raw/main/%E5%BF%AB%E5%BA%94%E7%94%A8/image.png'),
+  vaultImg.match(/src="[^"]*"/)?.[0]
+);
+// `image.png` exists in more than one folder; the note's own folder must win.
+const sameNameCtx = {
+  dirPath: 'RDMA',
+  assets: ['RDMA/image.png', '快应用/image.png'],
+  repoRawBase: 'https://raw.test/raw/main',
+};
+const sameName = renderMarkdown('![x](image.png)', sameNameCtx);
+ok(
+  '同名文件优先取笔记所在目录',
+  sameName.includes('/raw/main/RDMA/image.png'),
+  sameName.match(/src="[^"]*"/)?.[0]
+);
+const nonImageEmbed = renderMarkdown('![[陈述.pdf]]', {
+  dirPath: '预推免相关',
+  assets: ['预推免相关/陈述.pdf'],
+  repoRawBase: 'https://raw.test/raw/main',
+});
+ok(
+  '非图片嵌入转为下载链接',
+  nonImageEmbed.includes('href="https://raw.test/raw/main/') && !nonImageEmbed.includes('![['),
+  nonImageEmbed.match(/<a[^>]*>/)?.[0]
+);
 
 const noAlt = renderMarkdown('![](./a.png)', { rawBase: 'https://cdn.test/r' });
 ok('空 alt 有兜底文本', /alt="[^"]+"/.test(noAlt), noAlt.match(/alt="[^"]*"/)?.[0]);
@@ -385,6 +449,8 @@ let relativeImg = 0;
 let deadInternal = 0;
 let noTitle = 0;
 let emptyBody = 0;
+let unresolvedWiki = 0;
+let noRefPolicy = 0;
 
 for (const { dirPath, fileName } of sample) {
   const artName = stripExtension(fileName);
@@ -397,18 +463,43 @@ for (const { dirPath, fileName } of sample) {
     }
     const rawBase = await getRawBaseForDir(dirPath);
     const p = prepareArticle(raw);
-    const html = renderMarkdown(p.markdown, { rawBase });
+    const html = renderMarkdown(p.markdown, {
+      rawBase,
+      dirPath,
+      assets: tree.assets || [],
+      repoRawBase,
+    });
 
     if (countH1(html) > 0) {
       multiH1 += 1;
       console.log(`  ❌ 仍有 H1: ${dirPath}/${fileName}`);
     }
-    if (html.replace(/<[^>]*>/g, '').trim().length < 5) {
+    // A note whose whole content is one embedded screenshot has no prose at
+    // all; that is a legitimately image-only page, not an empty render.
+    const textOnly = html.replace(/<[^>]*>/g, '').trim();
+    if (textOnly.length < 5 && !/<img\b/i.test(html)) {
       emptyBody += 1;
       console.log(`  ❌ 正文为空: ${dirPath}/${fileName}`);
     }
     if (!p.title && !cleanTitle(fileName)) {
       noTitle += 1;
+    }
+    // Only image embeds matter here: a left-over `![[x.png]]` means a figure
+    // that the note promises is invisible. `![[x.docx]]` targets a file the
+    // repository does not contain at all, so it is left as written on purpose.
+    const danglingEmbed = [...html.matchAll(/!\[\[([^\][|]+?)(?:\|[^\]]*)?\]\]/g)].find((m) =>
+      /\.(png|jpe?g|gif|webp|svg|avif|bmp)$/i.test(m[1].trim())
+    );
+    if (danglingEmbed) {
+      unresolvedWiki += 1;
+      console.log(`  ❌ 未解析的图片嵌入: ${dirPath}/${fileName} → ${danglingEmbed[0]}`);
+    }
+    const unguardedImg = [...html.matchAll(/<img[^>]+>/g)].find(
+      (m) => /^https?:\/\//i.test(m[0].match(/src="([^"]+)"/)?.[1] || '') && !/referrerpolicy=/.test(m[0])
+    );
+    if (unguardedImg) {
+      noRefPolicy += 1;
+      console.log(`  ❌ 跨域图片缺少 no-referrer: ${dirPath}/${fileName}`);
     }
     for (const m of html.matchAll(/<img[^>]+src="([^"]+)"/g)) {
       const src = m[1];
@@ -438,6 +529,8 @@ ok('图片全部为绝对地址', relativeImg === 0, `${relativeImg} 篇`);
 ok('正文均非空', emptyBody === 0, `${emptyBody} 篇`);
 ok('内部文章链接均有效', deadInternal === 0, `${deadInternal} 处`);
 ok('每篇都有可显示标题', noTitle === 0);
+ok('无残留未解析的图片嵌入', unresolvedWiki === 0, `${unresolvedWiki} 篇`);
+ok('跨域图片均带 no-referrer', noRefPolicy === 0, `${noRefPolicy} 篇`);
 
 // ── 7. Live HTTP probes (opt-in) ───────────────────────
 section('7. 线上路由探测');

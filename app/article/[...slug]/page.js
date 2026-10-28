@@ -3,6 +3,7 @@ import {
   getArticleContent,
   getDirectoryTree,
   getRawBaseForDir,
+  getRepoRawBase,
 } from '@/lib/gitee';
 import {
   renderMarkdown,
@@ -43,10 +44,19 @@ async function loadArticle(dirPath, artName) {
   if (!raw) return null;
 
   const rawBase = await getRawBaseForDir(dirPath);
+  // Obsidian embeds name an image without saying which folder it is in, so the
+  // renderer needs the repository-wide asset inventory to resolve them.
+  const [repoRawBase, tree] = await Promise.all([
+    getRepoRawBase(),
+    getDirectoryTree(),
+  ]);
   const prepared = prepareArticle(raw);
   const htmlContent = renderMarkdown(prepared.markdown, {
     rawBase,
     resolveLink: makeLinkResolver(dirPath),
+    dirPath,
+    assets: tree.assets || [],
+    repoRawBase,
   });
   const plainText = extractPlainText(htmlContent, 400);
 
