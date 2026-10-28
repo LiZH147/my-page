@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { getDirectoryTree } from '@/lib/gitee';
 import {
   generatePageMetadata,
@@ -61,21 +62,23 @@ export default async function HomePage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Hero Banner — pure CSS, never goes out of date */}
-      <section className="relative mb-12 -mx-4 sm:-mx-6 lg:-mx-8 overflow-hidden rounded-none sm:rounded-xl
-                          bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-900">
-        {/* Subtle grid overlay */}
-        <div className="absolute inset-0 opacity-[0.06]"
-          style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-        {/* Glow orbs */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-indigo-400/10 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4" />
-        {/* Content */}
-        <div className="relative px-6 sm:px-8 py-12 sm:py-16 lg:py-20 text-center">
+      {/* Hero banner — pre-rendered art, text stays in HTML so it is indexable
+          and the headline is never baked into a bitmap. */}
+      <section className="relative mb-12 -mx-4 sm:-mx-6 lg:-mx-8 overflow-hidden rounded-none sm:rounded-xl bg-slate-950">
+        <Image
+          src="/hero-banner.png"
+          alt=""
+          aria-hidden="true"
+          fill
+          priority
+          sizes="(max-width: 1280px) 100vw, 1280px"
+          className="object-cover object-right"
+        />
+        <div className="relative px-6 sm:px-10 py-14 sm:py-20 lg:py-24">
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3 tracking-tight">
             梓木辛的知识库
           </h1>
-          <p className="text-sm sm:text-base text-blue-200/80 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-sm sm:text-base text-blue-200/80 max-w-2xl leading-relaxed">
             分享技术文章、学习笔记与知识沉淀。涵盖前端工程、系统与网络、科研实践等领域。
           </p>
         </div>

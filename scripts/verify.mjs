@@ -46,6 +46,11 @@ import {
   resolveRelativeArticleLink,
 } from '../lib/urls.js';
 import { isExcluded } from '../lib/excluded.js';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 // ── Harness ────────────────────────────────────────────
 let passed = 0;
@@ -284,6 +289,34 @@ ok('ItemList 条目为绝对地址', itemList.itemListElement[0].url.startsWith(
 const siteSchema = generateSiteSchema();
 ok('WebSite schema 无虚假 SearchAction', !('potentialAction' in siteSchema));
 
+// A dead hostname baked into the build is the single worst SEO defect possible:
+// every canonical, sitemap entry and OG card points nowhere. The previous
+// fallback did exactly that, so guard it explicitly.
+ok(
+  'canonical 不是已失效的主机名',
+  !SITE_CONFIG.url.includes('zihan-home.vercel.app'),
+  SITE_CONFIG.url
+);
+{
+  const dead = 'zihan-home.vercel.app';
+  const offenders = [];
+  const walk = (dir) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name === 'node_modules' || entry.name.startsWith('.next')) continue;
+        walk(full);
+      } else if (/\.(js|mjs|json|txt|xml)$/.test(entry.name)) {
+        if (readFileSync(full, 'utf8').includes(dead)) offenders.push(full.replace(ROOT, ''));
+      }
+    }
+  };
+  walk(join(ROOT, 'lib'));
+  walk(join(ROOT, 'app'));
+  walk(join(ROOT, 'public'));
+  ok('源码与静态资源无死域名残留', offenders.length === 0, offenders.join(', ') || '0 处');
+}
+
 // ── 5. Route graph — the check that catches dead links ─
 section('5. 路由图一致性 — 每个链接都必须是真实路由');
 
@@ -312,10 +345,17 @@ for (const route of articleRoutes) {
 ok('无空段路由', collisions === 0);
 
 // Expected sitemap set, built the same way the route handler builds it.
+// Homepage is the bare origin (no trailing slash), exactly as the route emits it.
+const STATIC_ROUTES = ['/about'];
 const sitemapExpected = new Set([SITE_CONFIG.url]);
+for (const route of STATIC_ROUTES) sitemapExpected.add(absoluteUrl(SITE_CONFIG.url, route));
 for (const route of categoryRoutes) sitemapExpected.add(absoluteUrl(SITE_CONFIG.url, route));
 for (const route of articleRoutes) sitemapExpected.add(absoluteUrl(SITE_CONFIG.url, route));
-ok('sitemap 预期条目数', sitemapExpected.size === 1 + categoryRoutes.size + articleRoutes.size, `${sitemapExpected.size} 条`);
+ok(
+  'sitemap 预期条目数',
+  sitemapExpected.size === 1 + STATIC_ROUTES.length + categoryRoutes.size + articleRoutes.size,
+  `${sitemapExpected.size} 条`
+);
 
 // Directory links rendered on the homepage must exist as categories.
 const homeDirLinks = dirKeys.map((k) => categoryPath(k));
@@ -401,9 +441,11 @@ if (!baseUrl) {
 } else {
   const targets = [
     ['/', 'home'],
+    ['/about', 'about'],
     ['/sitemap.xml', 'sitemap'],
     ['/robots.txt', 'robots'],
     ['/og-image.png', 'og image'],
+    ['/hero-banner.png', 'hero banner'],
     ...dirKeys.slice(0, 6).map((k) => [categoryPath(k), `category ${k}`]),
     ...sample.slice(0, 6).map(({ dirPath, fileName }) => [
       articlePath(dirPath, fileName),
@@ -425,6 +467,42 @@ if (!baseUrl) {
     ok('不存在的路径返回 404', res.status === 404, String(res.status));
   } catch (e) {
     ok('不存在的路径返回 404', false, e.message);
+  }
+
+  // Internal linking: an article must point sideways at its siblings, otherwise
+  // every note is a dead end that only the sitemap knows about.
+  try {
+    const rich = dirKeys
+      .map((k) => [k, (tree.directories[k]?.articles || []).length])
+      .sort((a, b) => b[1] - a[1])[0];
+    if (rich && rich[1] > 1) {
+      const dirPath = rich[0];
+      const fileName = tree.directories[dirPath].articles[0];
+      const html = await (
+        await fetch(`${baseUrl}${articlePath(dirPath, fileName)}`, { signal: AbortSignal.timeout(45000) })
+      ).text();
+      const links = [
+        ...html.matchAll(/<a[^>]+href="(\/article\/[^"]+)"/g),
+      ].map((m) => m[1]);
+      ok('文章页含同分类内链', html.includes('相关文章') && links.length > 0, `${links.length} 条`);
+      ok(
+        '内链指向真实文章',
+        links.every((l) => articleRoutes.has(l) || articleRoutes.has(decodeMaybe(l))),
+        `${links.length} 条`
+      );
+    } else {
+      ok('文章页含同分类内链', false, '没有含多篇文章的目录可测');
+    }
+  } catch (e) {
+    ok('文章页含同分类内链', false, e.message);
+  }
+
+  // The hero must be a real optimised image, not a broken <img>.
+  try {
+    const html = await (await fetch(`${baseUrl}/`, { signal: AbortSignal.timeout(30000) })).text();
+    ok('首页引用顶层横幅', html.includes('hero-banner'), 'hero-banner.png');
+  } catch (e) {
+    ok('首页引用顶层横幅', false, e.message);
   }
 
   try {

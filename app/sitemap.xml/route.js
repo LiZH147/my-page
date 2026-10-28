@@ -28,6 +28,11 @@ export async function GET() {
   const entries = [];
 
   entries.push({ loc: SITE_CONFIG.url, changefreq: 'daily', priority: '1.0' });
+  entries.push({
+    loc: absoluteUrl(SITE_CONFIG.url, '/about'),
+    changefreq: 'monthly',
+    priority: '0.4',
+  });
 
   for (const dirPath of Object.keys(tree.directories || {})) {
     entries.push({

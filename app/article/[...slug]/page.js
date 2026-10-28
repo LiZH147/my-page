@@ -129,6 +129,21 @@ export default async function ArticlePage({ params }) {
 
   const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
 
+  // Sibling notes in the same folder. Internal links matter as much as external
+  // ones for crawl depth and for telling the crawler what this page is about,
+  // so every article links sideways instead of only upward.
+  const tree = await getDirectoryTree();
+  const siblings = dirPath
+    ? tree.directories[dirPath]?.articles || []
+    : tree.articles || [];
+  const related = siblings
+    .filter((fileName) => fileName !== artName)
+    .slice(0, 6)
+    .map((fileName) => ({
+      name: cleanTitle(fileName),
+      href: articlePath(dirPath, fileName),
+    }));
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Breadcrumb */}
@@ -172,9 +187,29 @@ export default async function ArticlePage({ params }) {
           dangerouslySetInnerHTML={{ __html: article.htmlContent }}
         />
 
+        {/* Sibling notes: sideways internal links */}
+        {related.length > 0 && (
+          <nav className="mt-12 pt-6 border-t border-gray-200" aria-label="相关文章">
+            <h2 className="text-sm font-semibold text-gray-900 mb-3">相关文章</h2>
+            <ul className="space-y-2">
+              {related.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className="text-blue-600 hover:text-blue-800 text-sm"
+                    prefetch={false}
+                  >
+                    {item.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )}
+
         {/* Prev/next within the same category keeps crawl depth low */}
         {segments.length > 0 && (
-          <nav className="mt-12 pt-6 border-t border-gray-200" aria-label="分类导航">
+          <nav className="mt-8 pt-6 border-t border-gray-200" aria-label="分类导航">
             {dirPath ? (
               <Link
                 href={categoryPath(dirPath)}

@@ -97,6 +97,12 @@ function SiteHeader() {
             <Link href="/" className="text-sm text-gray-600 hover:text-blue-600 transition-colors">
               首页
             </Link>
+            <Link
+              href="/about"
+              className="text-sm text-gray-600 hover:text-blue-600 transition-colors"
+            >
+              关于
+            </Link>
             <a
               href="https://github.com/LiZH147"
               target="_blank"
