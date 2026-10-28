@@ -115,6 +115,7 @@ export default async function ArticlePage({ params }) {
 
   const path = articlePath(dirPath, artName);
   const section = dirPath ? categoryTitle(dirPath) : null;
+  const wordCount = countWords(article.plainText);
 
   const articleSchema = generateArticleSchema({
     title: article.title,
@@ -122,7 +123,7 @@ export default async function ArticlePage({ params }) {
     path,
     section,
     keywords: section ? [section, article.title] : [article.title],
-    wordCount: countWords(article.plainText),
+    wordCount,
   });
 
   // Breadcrumb: 首页 / …每一层分类 / 文章
@@ -188,7 +189,10 @@ export default async function ArticlePage({ params }) {
           </h1>
           <p className="text-gray-500">
             {section ? `${section} · ` : ''}
-            {countWords(article.plainText)} 字
+            {/* A note whose whole content is one embedded screenshot has no
+                prose, and "0 字" reads like a rendering failure rather than a
+                fact about the note. */}
+            {wordCount > 0 ? `${wordCount} 字` : '图片笔记'}
           </p>
         </header>
 
