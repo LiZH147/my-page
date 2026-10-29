@@ -357,11 +357,11 @@ ok('countWords 统计中英混排', countWords('你好 world') === 3, String(cou
 section('4. lib/seo.js — 元数据与结构化数据');
 
 const metaHome = generatePageMetadata({ description: 'd', path: '/' });
-ok('首页标题不重复站点名', (metaHome.title.match(/ - Zihan Home/g) || []).length === 0, metaHome.title);
+ok('首页标题不重复站点名', (metaHome.title.match(/ - iizinan Home/g) || []).length === 0, metaHome.title);
 ok('首页 canonical 为绝对地址', metaHome.alternates.canonical === SITE_CONFIG.url || metaHome.alternates.canonical.startsWith(SITE_CONFIG.url));
 
 const metaArticle = generatePageMetadata({ title: '某文章', description: 'desc', path: '/article/a', type: 'article' });
-ok('文章标题只带一次站点名', (metaArticle.title.match(/Zihan Home/g) || []).length === 1, metaArticle.title);
+ok('文章标题只带一次站点名', (metaArticle.title.match(/iizinan Home/g) || []).length === 1, metaArticle.title);
 ok(
   'og:image 指向 OG 资源',
   metaArticle.openGraph.images[0].url === absoluteUrl(SITE_CONFIG.url, SITE_CONFIG.ogImage),

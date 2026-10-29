@@ -1,4 +1,4 @@
-# 梓木辛 (Zihan Home)
+# 梓木辛 (iizinan Home)
 
 基于 Next.js 14 的个人知识库网站，内容来自 Gitee Obsidian 仓库，使用 ISR + SSG 渲染。
 

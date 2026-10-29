@@ -76,7 +76,7 @@ export default async function HomePage() {
         />
         <div className="relative px-6 sm:px-10 py-14 sm:py-20 lg:py-24">
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3 tracking-tight">
-            梓木辛的知识库
+            iizinan的知识库
           </h1>
           <p className="text-sm sm:text-base text-blue-200/80 max-w-2xl leading-relaxed">
             分享技术文章、学习笔记与知识沉淀。涵盖前端工程、系统与网络、科研实践等领域。

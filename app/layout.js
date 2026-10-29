@@ -85,12 +85,12 @@ function SiteHeader() {
           >
             <Image
               src="/logo192.png"
-              alt="Zihan Home Logo"
+              alt="iizinan Home Logo"
               width={32}
               height={32}
               className="rounded-full object-cover"
             />
-            <span className="text-lg font-semibold tracking-tight">Zihan Home</span>
+            <span className="text-lg font-semibold tracking-tight">iizinan Home</span>
           </Link>
 
           <nav className="flex items-center gap-6" aria-label="主要导航">
