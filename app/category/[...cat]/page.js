@@ -39,9 +39,9 @@ export async function generateMetadata({ params }) {
   const tree = await getDirectoryTree();
   const resolved = resolveDirPath(tree, dirPath);
 
-  if (!resolved) {
-    return generatePageMetadata({ title: '分类未找到', path: categoryPath(dirPath) });
-  }
+  // Same reason as the article route: this runs before streaming starts, so it
+  // is the only place that can still answer with a real 404 status.
+  if (!resolved) notFound();
 
   const label = categoryTitle(resolved);
   const count = tree.directories[resolved].articles.length;

@@ -86,10 +86,15 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }) {
   const { dirPath, artName } = parseArticleSlug(params.slug);
-  if (!artName) return generatePageMetadata({ title: '文章未找到', path: '' });
+  // `notFound()` here, not a "文章未找到" title: this runs before the response
+  // starts streaming, so it produces a real 404 status. Returning soft metadata
+  // instead made every missing URL answer 200 — a search engine indexes that as
+  // a valid page. `app/article/[...slug]/loading.js` opens a Suspense boundary,
+  // so by the time the page component throws, the 200 status is already sent.
+  if (!artName) notFound();
 
   const article = await loadArticle(dirPath, artName);
-  if (!article) return generatePageMetadata({ title: '文章未找到', path: '' });
+  if (!article) notFound();
 
   const path = articlePath(dirPath, artName);
   const section = dirPath ? categoryTitle(dirPath) : null;

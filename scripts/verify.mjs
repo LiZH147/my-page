@@ -14,6 +14,8 @@ import {
   getRawBaseForDir,
   getRepoRawBase,
 } from '../lib/gitee.js';
+import { isHidden } from '../lib/hidden.js';
+import treeSnapshot from '../data/tree-snapshot.js';
 import {
   renderMarkdown,
   extractPlainText,
@@ -121,6 +123,54 @@ ok(
 
 const licenseLeak = allArticles.filter((a) => /^LICEN[CS]E/i.test(a.fileName));
 ok('无 LICENSE 文件', licenseLeak.length === 0);
+
+// ── 隐藏文章（lib/hidden.js）──
+// Hiding is implemented by filtering the data layer, so it must hold for every
+// consumer at once. A note hidden here but still listed somewhere would be
+// visible in the grid and 404 on click — the worst of both.
+const hiddenListed = allArticles.filter((a) =>
+  isHidden(`${a.dirPath ? `${a.dirPath}/` : ''}${a.fileName}`)
+);
+ok(
+  '隐藏的文章不出现在树里',
+  hiddenListed.length === 0,
+  hiddenListed.map((a) => `${a.dirPath}/${a.fileName}`).join(', ') || 'ok'
+);
+const hiddenDir = await getArticleContent('__不存在的目录__', '__不存在.md');
+ok('不存在的文章返回 null', hiddenDir === null);
+
+// ── 快照兜底（data/tree-snapshot.js）──
+// The tree API rate-limits by IP and answers 403 when spent; without this the
+// whole site renders empty. Assert the committed snapshot is actually populated
+// and agrees with the live tree, so a stale snapshot cannot pass unnoticed.
+const snapshotArticles =
+  (treeSnapshot.articles || []).length +
+  Object.values(treeSnapshot.directories || {}).reduce(
+    (n, d) => n + (d.articles || []).length,
+    0
+  );
+ok('快照非空（限流时兜底）', snapshotArticles > 0, `${snapshotArticles} 篇 / ${treeSnapshot.savedAt || '未记录时间'}`);
+ok(
+  '快照与实时树条目一致',
+  snapshotArticles === allArticles.length,
+  `快照 ${snapshotArticles} vs 实时 ${allArticles.length}`
+);
+const liveSet = new Set(allArticles.map((a) => `${a.dirPath ? `${a.dirPath}/` : ''}${a.fileName}`));
+const snapshotSet = new Set([
+  ...(treeSnapshot.articles || []),
+  ...Object.entries(treeSnapshot.directories || {}).flatMap(([dir, v]) =>
+    (v.articles || []).map((name) => `${dir}/${name}`)
+  ),
+]);
+const onlyLive = [...liveSet].filter((p) => !snapshotSet.has(p));
+const onlySnapshot = [...snapshotSet].filter((p) => !liveSet.has(p));
+ok(
+  '快照没有遗漏或多出文章',
+  onlyLive.length === 0 && onlySnapshot.length === 0,
+  onlyLive.length || onlySnapshot.length
+    ? `实时独有 ${onlyLive.join(',') || '无'} / 快照独有 ${onlySnapshot.join(',') || '无'}`
+    : 'ok'
+);
 
 const hiddenLeak = allArticles.filter((a) => a.fileName.startsWith('.') || a.dirPath.startsWith('.'));
 ok('无隐藏文件', hiddenLeak.length === 0);
@@ -567,6 +617,38 @@ if (!baseUrl) {
     ok('不存在的路径返回 404', res.status === 404, String(res.status));
   } catch (e) {
     ok('不存在的路径返回 404', false, e.message);
+  }
+
+  // Catch-all routes must 404 with a real status, not render an error page with
+  // 200. A `loading.js` in the same segment starts streaming immediately, so
+  // `notFound()` can no longer set the status — Google indexes the "not found"
+  // page as a thin duplicate. These two checks are what caught that.
+  for (const [path, label] of [
+    ['/article/__no_such_article__', '不存在的文章'],
+    ['/category/__no_such_category__', '不存在的分类'],
+  ]) {
+    try {
+      const res = await fetch(`${baseUrl}${path}`, { signal: AbortSignal.timeout(30000) });
+      ok(`${label}返回 404`, res.status === 404, `HTTP ${res.status}`);
+    } catch (e) {
+      ok(`${label}返回 404`, false, e.message);
+    }
+  }
+
+  // A hidden note must be gone from the site, not merely unlisted: its own URL
+  // has to 404 as well, otherwise a shared link still publishes it.
+  const { HIDDEN_PATHS } = await import('../lib/hidden.js');
+  if (HIDDEN_PATHS.length > 0) {
+    for (const entry of HIDDEN_PATHS) {
+      const segments = splitSegments(entry.replace(/\.(md|markdown|html|htm|txt)$/i, ''));
+      const path = articlePath(segments.slice(0, -1).join('/'), segments[segments.length - 1]);
+      try {
+        const res = await fetch(`${baseUrl}${path}`, { signal: AbortSignal.timeout(30000) });
+        ok(`隐藏文章不可访问 ${entry}`, res.status === 404, `HTTP ${res.status}`);
+      } catch (e) {
+        ok(`隐藏文章不可访问 ${entry}`, false, e.message);
+      }
+    }
   }
 
   // Internal linking: an article must point sideways at its siblings, otherwise
